@@ -1,0 +1,6 @@
+/home/cole/Documents/llvm_practice/pass/DotGraphPass/build/CMakeFiles/intrinsics_gen.dir
+/home/cole/Documents/llvm_practice/pass/DotGraphPass/build/CMakeFiles/omp_gen.dir
+/home/cole/Documents/llvm_practice/pass/DotGraphPass/build/CMakeFiles/acc_gen.dir
+/home/cole/Documents/llvm_practice/pass/DotGraphPass/build/CMakeFiles/DotGraphPass.dir
+/home/cole/Documents/llvm_practice/pass/DotGraphPass/build/CMakeFiles/edit_cache.dir
+/home/cole/Documents/llvm_practice/pass/DotGraphPass/build/CMakeFiles/rebuild_cache.dir

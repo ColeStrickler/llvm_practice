@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -shared  -o libBBPass.so CMakeFiles/BBPass.dir/BBPass.cpp.o 
