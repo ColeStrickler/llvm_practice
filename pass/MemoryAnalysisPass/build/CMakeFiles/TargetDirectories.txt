@@ -1,0 +1,6 @@
+/home/cole/Documents/llvm_practice/pass/MemoryAnalysisPass/build/CMakeFiles/intrinsics_gen.dir
+/home/cole/Documents/llvm_practice/pass/MemoryAnalysisPass/build/CMakeFiles/omp_gen.dir
+/home/cole/Documents/llvm_practice/pass/MemoryAnalysisPass/build/CMakeFiles/acc_gen.dir
+/home/cole/Documents/llvm_practice/pass/MemoryAnalysisPass/build/CMakeFiles/MemoryAnalysisPass.dir
+/home/cole/Documents/llvm_practice/pass/MemoryAnalysisPass/build/CMakeFiles/edit_cache.dir
+/home/cole/Documents/llvm_practice/pass/MemoryAnalysisPass/build/CMakeFiles/rebuild_cache.dir

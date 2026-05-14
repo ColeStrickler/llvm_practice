@@ -1,12 +1,20 @@
 #include <stdio.h>
 
-int foo(int x) {
-    if (x > 0)
-        return x + 1;
-    else
-        return x - 1;
+int factorial(int x) {
+    if (x <= 0)
+        return 1;
+    return x * factorial(x-1);
 }
 
 int main() {
-    return foo(0);
+    int* data = new int[4096];
+
+    int res = 0;
+    for (int i = 0; i < 4096; i += 8)
+    {
+        res += data[i];
+       // printf("addr data 0x%llx\n", &data[i]);
+    }
+
+    return res;
 }
