@@ -7,12 +7,17 @@ int factorial(int x) {
 }
 
 int main() {
-    int* data = new int[4096];
+    int* data = new int[16384];
 
     int res = 0;
-    for (int i = 0; i < 4096; i += 8)
+    for (int i = 0; i < 4096; i++)
     {
-        res += data[i];
+        for (int j = 0; j < 32; j++)
+        {
+            for (int k = 0; k < 16; k++)
+                res += data[i*2 + j*100 + k];
+        }
+
        // printf("addr data 0x%llx\n", &data[i]);
     }
 

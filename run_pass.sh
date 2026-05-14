@@ -32,7 +32,7 @@ cd "$curr_dir"
 
 
 
-clang++ -O3 -emit-llvm -c "test/$testfile" -o "test/$bc_file"
+clang++ -O1 -emit-llvm -c "test/$testfile" -o "test/$bc_file"
 opt -load-pass-plugin "$pass_dir/build/lib$pass.so" \
     -passes="$pass" \
     "test/$bc_file" \

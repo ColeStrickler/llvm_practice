@@ -42,7 +42,7 @@ uint32_t intLog2(uint64_t x) {
 
 #define BIT_SET(val, n) (val | (1 << n))
 #define BIT_EXTRACT(val, offset, num_bits) ((val >> offset) & ((1ULL << num_bits) - 1))
-
+#define BIT_ZEROBOTTOM_N(val, n) (val & ~((1ULL << n) - 1ULL))
 
 enum REPLACEMENT_POLICY
 {
@@ -85,6 +85,7 @@ struct WriteAccess
 struct CacheLineStore
 {
     uint64_t m_Tag = 0;
+    uint64_t m_Addr = 0;
     uint32_t m_Region = 0;
     bool m_Valid = false;
     bool m_Dirty = false;
@@ -129,8 +130,13 @@ private:
     ReplacementResult ReplaceRandom(uint64_t addr, bool write);
 
 
+    // Statistics
+    uint64_t m_HitCount;
+    uint64_t m_MissCount;
 
 
+
+    // Configuration
     uint32_t m_Capacity;
     uint32_t m_NumLines;
     uint32_t m_WayCount;
@@ -178,6 +184,12 @@ Cache::Cache(uint8_t line_size, uint32_t sets, uint32_t ways, uint16_t banks, RE
 
 
     InitStore();
+
+    // Statistics Init
+
+    m_HitCount = 0;
+    m_MissCount = 0;
+
 }
 
 Cache::~Cache()
@@ -290,6 +302,7 @@ ReplacementResult Cache::ReplaceRandom(uint64_t addr, bool write)
     cache_set[way].m_Dirty = write;
     cache_set[way].m_Valid = true;
     cache_set[way].m_Region = 0;
+    cache_set[way].m_Addr = BIT_ZEROBOTTOM_N(addr, m_OffsetBits);
 
     return result;
 }
@@ -316,10 +329,10 @@ public:
     MemoryModel(const std::vector<Cache> cache_hierarchy, std::vector<std::pair<int, Prefetcher>> prefetchers, TLB tlb_model);
     ~MemoryModel();
 
-    void Load(uint64_t addr, uint64_t size);
-    void Store(uint64_t addr, uint64_t size);
+    void Load(uint64_t addr, uint64_t size, int level);
+    void Store(uint64_t addr, uint64_t size, int level);
 private:
-    Cache* m_Cache;
+    std::vector<Cache*> m_Cache;
 
 };
 /*
@@ -332,7 +345,9 @@ MemoryModel* g_MemoryModel;
 MemoryModel::MemoryModel()
 {
     printf("MemoryModel()\n");
-    m_Cache = new Cache(64, 256, 4, 1, REPLACEMENT_POLICY::RANDOM);
+
+    for (int i = 0; i < 2; i++)
+        m_Cache.push_back(new Cache(64, 256*(i+1), 4, 1, REPLACEMENT_POLICY::RANDOM));
 }
 
 MemoryModel::MemoryModel(const std::vector<Cache> cache_hierarchy, std::vector<std::pair<int, Prefetcher>> prefetchers, TLB tlb_model)
@@ -340,34 +355,54 @@ MemoryModel::MemoryModel(const std::vector<Cache> cache_hierarchy, std::vector<s
     
 }
 
-void MemoryModel::Load(uint64_t addr, uint64_t size)
+void MemoryModel::Load(uint64_t addr, uint64_t size, int level)
 {
-    auto res = m_Cache->Load({addr, size});
+    assert(level < m_Cache.size());
+    bool last_level = m_Cache.size()-1 == level;
+    auto res = m_Cache[level]->Load({addr, size});
     if (res.m_Result == ACCESS_RESULT::HIT)
-        printf("LOAD HIT 0x%llx\n", addr);
+    {
+        printf("[Cache%d] LOAD HIT 0x%llx\n",level, addr);
+    }
     else
-        printf("LOAD MISS 0x%llx\n", addr);
+    {
+        printf("[Cache%d] LOAD MISS 0x%llx\n", level, addr);
+        if (res.m_Effects == ACCESS_EFFECTS::EVICT_DIRTY && !last_level)
+            Store(res.m_Evicted.m_Evicted.m_Addr, 64, level+1);
+        if (!last_level)
+            Load(addr, 64, level+1); // we maintain inclusivity. 
+    }
 }
 
-void MemoryModel::Store(uint64_t addr, uint64_t size)
+void MemoryModel::Store(uint64_t addr, uint64_t size, int level)
 {
-    auto res = m_Cache->Store({addr, size});
+    assert(level < m_Cache.size());
+    bool last_level = m_Cache.size()-1 == level;
+    auto res = m_Cache[level]->Store({addr, size});
     if (res.m_Result == ACCESS_RESULT::HIT)
-        printf("STORE HIT 0x%llx\n", addr);
+    {
+        printf("[Cache%d] STORE HIT 0x%llx\n", level, addr);
+    }
     else
-        printf("STORE MISS 0x%llx\n", addr);
+    {
+        printf("[Cache%d] STORE MISS 0x%llx\n", level, addr);
+        if (res.m_Effects == ACCESS_EFFECTS::EVICT_DIRTY && !last_level)
+            Store(res.m_Evicted.m_Evicted.m_Addr, 64, level+1);
+        if (!last_level)
+            Load(addr, 64, level+1); // we maintain inclusivity. 
+    }
 }
 
 extern "C"
 void record_load(void* addr, uint64_t size)
 {
-    g_MemoryModel->Load((uint64_t)addr, size);
+    g_MemoryModel->Load((uint64_t)addr, size, 0);
 }
 
 extern "C"
 void record_store(void* addr, uint64_t size)
 {
-    g_MemoryModel->Store((uint64_t)addr, size);
+    g_MemoryModel->Store((uint64_t)addr, size, 0);
 }
 
 
